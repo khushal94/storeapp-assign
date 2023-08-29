@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StoreApps Assessment</title>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+</head>
+
+<body style="background: #f7f7f7;">
+  <div style="text-align: center;margin-top: 8%;">
+    <h1>StoreApps Assessment</h1>
+    <label for="input">Enter an email or website:</label>
+    <input type="text" id="input" placeholder="Enter email or website">
+    <div>
+      <ul id="list" style="width: 200px;margin: 25px auto;">
+      </ul>
+    </div>
+    <button id="submit">Submit</button>
+    <div id="showSearchResult"></div>
+
+    <script>
+      const submitButton = document.getElementById('submit');
+      const resultDiv = document.getElementById('showSearchResult');
+
+      submitButton.addEventListener('click', async () => {
+        const input = document.getElementById('input').value.trim();
+        resultDiv.innerHTML = '';
+
+        if (!input) {
+          resultDiv.textContent = 'Input is required';
+          return;
+        }
+
+        try {
+          const response = await fetch('/getInfo', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ input })
+          });
+
+          const data = await response.json();
+
+          if (data.error) {
+            resultDiv.textContent = data.error;
+            return;
+          }
+
+          let info = `<br> Type: ${data.type}, Info: ${data.info}`;
+
+          if (data.avatarURL) {
+            info += `<br><br>${data.avatarURL}<br><br><img src="${data.avatarURL}" alt="Avatar">`;
+          } else if (data.logoURL) {
+            info += `<br><br>${data.logoURL}<br><br><img src="${data.logoURL}" alt="Logo">`;
+          }
+
+          resultDiv.innerHTML = info;
+        } catch (error) {
+          console.error(error);
+          resultDiv.textContent = 'An error occurred';
+        }
+      });
+    </script>
+
+    <script>
+      $(document).ready(function () {
+        $("#input").on("input", async function () {
+          var value = this.value;
+          if (value && value.length >= 3) {
+
+
+            const response = await fetch('/autocomplete', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ value })
+            });
+
+            const data = await response.json();
+            console.log(data, 'data');
+
+            if (data?.matched) {
+              $('#list').empty();
+              data.matched.forEach(element => {
+                var el = document.getElementById('list');
+                var node = document.createElement("li");
+                var link = document.createElement("a");
+                link.innerHTML = element.domain;
+                node.appendChild(link);
+                el.appendChild(node);
+              });
+
+              $("#list li a").on("click", function () {
+                console.log($(this).html(), '$(this).val()');
+                $("#input").val($(this).html());
+              });
+
+            }
+          }
+        });
+
+
+      });
+    </script>
+
+  </div>
+</body>
+
+</html>
